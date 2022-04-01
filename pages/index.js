@@ -30,7 +30,7 @@ export default function Home() {
         <button
           className="hover:scale-110  transition duration-300 ease-in-out p-4 bg-[#18EE98] text-black font-bold italic w-[20em] rounded-full flex items-center justify-center"
           onClick={async () => {
-            if (publicKey.publicKey) {
+            if (publicKey?.publicKey) {
               setLoading(true);
               let connection = new solanaWeb3.Connection(
                 solanaWeb3.clusterApiUrl("testnet")

@@ -49,7 +49,7 @@ function Wallet() {
       <div className="w-full flex justify-end">
         <button
           onClick={() => {
-            if (publicKey.publicKey) {
+            if (publicKey?.publicKey) {
               window.solana.disconnect();
               setPublicKey({});
             } else {
