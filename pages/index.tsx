@@ -1,162 +1,103 @@
-import Head from "next/head";
-import Image from "../Components/Image";
-import styles from "../styles/Home.module.css";
-import { Connection } from "@metaplex/js";
-import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
-import { useEffect, useState } from "react";
-import { getPhantomWallet } from "@solana/wallet-adapter-wallets";
-import {
-  getAllNFTsMetadata,
-  getAccountsData,
-} from "../Components/Metadata/index.ts";
-import Test from "../Components/test/index.tsx";
-import axios from "axios";
+import { useEffect, useState, useContext } from "react";
+import Link from "next/link";
+import Wallet from "../Components/Wallet";
+import { Context } from "../store";
+import * as solanaWeb3 from "@solana/web3.js";
+import { TailSpin } from "react-loader-spinner";
 
 export default function Home() {
-  const [search, setSearch] = useState("");
-  const [collectionData, setCollectionData] = useState({});
-  const [collection, setCollection] = useState({});
+  const [context, dispatch] = useContext(Context);
+  const { publicKey } = context;
+  const [displayTransaction, setDisplayTransaction] = useState({});
   const [loading, setLoading] = useState(false);
-  const [dots, setDots] = useState("");
-  // connect phantom wallet
-  // const connectWallet = () => {
-  //   const wallet = getPhantomWallet();
-  //   wallet.connect();
-  //   return wallet;
-  // };
 
   useEffect(() => {
-    const fetchData = async () => {
-      await getAccountsData()
-        .then((res) => console.log("res getAccountsData", res))
-        .catch((err) => console.log("err getAccountsData", err));
-    };
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (dots.length < 3) {
-        setDots(dots + ".");
-      } else {
-        setDots("");
-      }
-    }, 400);
-    return () => clearInterval(interval);
-  }, [dots]);
-
-  useEffect(() => {
-    console.log("collection: ", collection);
-  }, [collection]);
-
-  useEffect(() => {
-    if (search.length) {
-      setCollectionData({});
-      const searchProject = async () => {
-        await axios
-          .post("/api/search", {
-            search: search,
-          })
-          .then((res) => {
-            setCollectionData(res.data);
-            console.log(res.data);
-          })
-          .catch((err) => {
-            setCollectionData(err.data);
-            console.log(err.data);
-          });
-      };
-      searchProject();
-    } else {
-      setCollectionData({});
+    let timer;
+    if (displayTransaction) {
+      timer = setTimeout(() => {
+        setDisplayTransaction({});
+      }, 5000);
     }
-  }, [search]);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [displayTransaction]);
 
   return (
-    <div className="w-full h-screen flex flex-col space-y-4">
-      <button onClick={() => connectWallet()} className="">
-        Connect Wallet{" "}
-      </button>
+    <div className="w-full h-screen flex flex-col space-y-4 bg-gray-800 text-white">
+      <Wallet />
+      <div className="w-full flex  justify-center h-screen items-center flex-col">
+        <button
+          className="hover:scale-110  transition duration-300 ease-in-out p-4 bg-[#18EE98] text-black font-bold italic w-[20em] rounded-full flex items-center justify-center"
+          onClick={async () => {
+            setLoading(true);
+            let connection = new solanaWeb3.Connection(
+              solanaWeb3.clusterApiUrl("testnet")
+            );
 
-      <div className="flex flex-col px-4">
-        <input
-          type="text"
-          onChange={(e) => setSearch(e.target.value)}
-          value={search}
-          className="w-full ring-2  h-[2em] px-4 rounded-md ring-black text-black font-semibold"
-        />
-        {collectionData?.collection?.length ? (
-          <div className="w-full flex flex-col bg-gray-500 text-white">
-            {collectionData?.collection.map((collection_data, key) => (
-              <div
-                key={key}
-                className="flex relative py-2 px-4 flex-row space-x-4 items-center"
+            let airdropSignature = await connection.requestAirdrop(
+              new solanaWeb3.PublicKey(publicKey.publicKey),
+              solanaWeb3.LAMPORTS_PER_SOL
+            );
+
+            await connection
+              .confirmTransaction(airdropSignature)
+              .then((response) => {
+                setDisplayTransaction({
+                  status: true,
+                  transaction_address: airdropSignature,
+                });
+              })
+              .catch((error) => {
+                setDisplayTransaction({
+                  status: false,
+                  message: error.message,
+                });
+              });
+            setLoading(false);
+            console.log("airdrop terminé !");
+          }}
+        >
+          {loading ? (
+            <TailSpin color="#FFFFFF" height={30} width={30} />
+          ) : (
+            "Airdrop me!"
+          )}
+        </button>
+
+        <span className="text-sm text-[#18EE98] italic py-4">
+          You'll receive 1 sol in your connected wallet
+        </span>
+
+        {displayTransaction && displayTransaction?.status === true ? (
+          <div className="rounded box min-w-[20em] fixed p-4 pt-14 top-4 space-y-4 right-4 grid bg-fuchsia-500">
+            <button
+              className=" px-4 absolute py-2 top-2 right-2 text-white rounded-full"
+              onClick={() => setDisplayTransaction({})}
+            >
+              X
+            </button>
+            <button className="px-4 py-2 bg-[#18EE98] text-black font-bold">
+              <Link
+                href={
+                  "https://explorer.solana.com/tx/" +
+                  displayTransaction?.transaction_address +
+                  "?cluster=testnet"
+                }
               >
-                <div className="rounded-full w-[2em] h-[2em] relative">
-                  {collection_data?.avatar && (
-                    <Image
-                      src={`/api/imageproxy?url=${encodeURIComponent(
-                        collection_data?.avatar
-                      )}`}
-                      alt="collection_avatar"
-                      layout="fill"
-                      quality={50}
-                      rounded={true}
-                      priority
-                    />
-                  )}
-                </div>
-
-                <button
-                  onClick={async () => {
-                    setCollectionData({});
-                    setLoading(true);
-                    await axios
-                      .post("/api/collection", {
-                        collection: collection_data,
-                      })
-                      .then((res) => setCollection(res.data))
-                      .catch((err) => setCollection(err.data));
-                    setLoading(false);
-                  }}
-                  className="text-white font-semibold hover:text-black"
-                >
-                  {collection_data.collection}
-                </button>
-              </div>
-            ))}
+                <a target="_blank">See on Solana Explorer</a>
+              </Link>
+            </button>
           </div>
         ) : null}
-        {loading ? <p>Envoi en cours{dots} </p> : null}
-      </div>
 
-      <div className="w-full grid grid-cols-4 md:grid-cols-2 gap-4 p-4 md:p-0">
-        {collection?.length &&
-          collection?.collection?.map((item, id) => (
-            <div
-              className="flex flex-col space-y-2 bg-white shadow-xl"
-              key={id}
-            >
-              {item.data.data.image && (
-                <Image
-                  src={`/api/imageproxy?url=${encodeURIComponent(
-                    item.data.data.image
-                  )}`}
-                  alt="collection_avatar"
-                  layout="fill"
-                  quality={50}
-                  priority
-                  width={500}
-                  height={500}
-                />
-              )}
-              {item.data.data.name && (
-                <p className="text-center">{item.data.data.name}</p>
-              )}
-            </div>
-          ))}
+        {displayTransaction && displayTransaction?.status === false ? (
+          <div className="rounded min-w-[20em] p-4 fixed top-4 right-4 flex items-start flex-col bg-red-500">
+            <p>error during transaction !</p>
+            <p>{displayTransaction?.message}</p>
+          </div>
+        ) : null}
       </div>
-      <Test />
     </div>
   );
 }
