@@ -30,32 +30,34 @@ export default function Home() {
         <button
           className="hover:scale-110  transition duration-300 ease-in-out p-4 bg-[#18EE98] text-black font-bold italic w-[20em] rounded-full flex items-center justify-center"
           onClick={async () => {
-            setLoading(true);
-            let connection = new solanaWeb3.Connection(
-              solanaWeb3.clusterApiUrl("testnet")
-            );
+            if (publicKey.publicKey) {
+              setLoading(true);
+              let connection = new solanaWeb3.Connection(
+                solanaWeb3.clusterApiUrl("testnet")
+              );
 
-            let airdropSignature = await connection.requestAirdrop(
-              new solanaWeb3.PublicKey(publicKey.publicKey),
-              solanaWeb3.LAMPORTS_PER_SOL
-            );
+              let airdropSignature = await connection.requestAirdrop(
+                new solanaWeb3.PublicKey(publicKey.publicKey),
+                solanaWeb3.LAMPORTS_PER_SOL
+              );
 
-            await connection
-              .confirmTransaction(airdropSignature)
-              .then((response) => {
-                setDisplayTransaction({
-                  status: true,
-                  transaction_address: airdropSignature,
+              await connection
+                .confirmTransaction(airdropSignature)
+                .then((response) => {
+                  setDisplayTransaction({
+                    status: true,
+                    transaction_address: airdropSignature,
+                  });
+                })
+                .catch((error) => {
+                  setDisplayTransaction({
+                    status: false,
+                    message: error.message,
+                  });
                 });
-              })
-              .catch((error) => {
-                setDisplayTransaction({
-                  status: false,
-                  message: error.message,
-                });
-              });
-            setLoading(false);
-            console.log("airdrop terminé !");
+              setLoading(false);
+              console.log("airdrop terminé !");
+            }
           }}
         >
           {loading ? (

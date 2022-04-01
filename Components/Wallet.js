@@ -41,7 +41,7 @@ function Wallet() {
   }, [publicKey]);
 
   return (
-    <div className=" grid grid-cols-3 p-4">
+    <div className="grid grid-cols-3 p-4">
       <div></div>
       <div className="w-full flex items-center justify-center text-3xl text-[#18EE98] font-bold italic">
         <span>Solana Faucet</span>
@@ -49,16 +49,16 @@ function Wallet() {
       <div className="w-full flex justify-end">
         <button
           onClick={() => {
-            if (publicKey) {
+            if (publicKey.publicKey) {
               window.solana.disconnect();
-              setPublicKey("");
+              setPublicKey({});
             } else {
               connectWallet();
             }
           }}
           className=" px-4 py-2 border-2 rounded-full border-[#18EE98]"
         >
-          {publicKey ? CutString(20, publicKey.publicKey) : "Connect Wallet"}
+          {publicKey?.publicKey ? CutString(20, publicKey.publicKey) : "Connect Wallet"}
         </button>
       </div>
     </div>
