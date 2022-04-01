@@ -66,7 +66,7 @@ export default function Home() {
         </button>
 
         <span className="text-sm text-[#18EE98] italic py-4">
-          You'll receive 1 sol in your connected wallet
+          {"You'll "}receive 1 sol in your connected wallet
         </span>
 
         {displayTransaction && displayTransaction?.status === true ? (
